@@ -1,0 +1,1548 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <link rel="manifest" href="/manifest.json">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Pizza House - Заказ пиццы</title>
+    <style>
+        /* ===== RESET & BASE ===== */
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #e53935;
+            --primary-dark: #c62828;
+            --primary-light: #ffcdd2;
+            --secondary: #ff8f00;
+            --bg: #f5f0eb;
+            --surface: #ffffff;
+            --text: #1a1a1a;
+            --text-secondary: #666;
+            --shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+            --radius: 16px;
+            --radius-sm: 10px;
+            --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --safe-bottom: env(safe-area-inset-bottom, 0px);
+            --header-height: 64px;
+            --cart-height: 80px;
+        }
+
+        html {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            font-size: 16px;
+            -webkit-tap-highlight-color: transparent;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            padding-bottom: calc(var(--cart-height) + var(--safe-bottom) + 16px);
+            min-height: 100vh;
+            min-height: 100dvh;
+            overflow-x: hidden;
+        }
+
+        /* ===== HEADER ===== */
+        .header {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            background: var(--surface);
+            padding: 0 16px;
+            height: var(--header-height);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+        }
+
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: var(--primary);
+        }
+
+        .header-brand .logo-icon {
+            font-size: 1.8rem;
+            line-height: 1;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .cart-btn {
+            position: relative;
+            background: none;
+            border: none;
+            font-size: 1.6rem;
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 50%;
+            transition: var(--transition);
+            color: var(--text);
+        }
+
+        .cart-btn:active {
+            transform: scale(0.92);
+        }
+
+        .cart-badge {
+            position: absolute;
+            top: -2px;
+            right: -4px;
+            background: var(--primary);
+            color: #fff;
+            font-size: 0.65rem;
+            font-weight: 700;
+            min-width: 20px;
+            height: 20px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 5px;
+            transition: var(--transition);
+            transform: scale(0);
+        }
+
+        .cart-badge.show {
+            transform: scale(1);
+        }
+
+        /* ===== MAIN CONTENT ===== */
+        .container {
+            max-width: 480px;
+            margin: 0 auto;
+            padding: 12px 16px 20px;
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin: 20px 0 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-title span {
+            background: var(--primary);
+            color: #fff;
+            font-size: 0.7rem;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        /* ===== CATEGORY TABS ===== */
+        .category-tabs {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding: 4px 0 12px;
+            scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .category-tabs::-webkit-scrollbar {
+            display: none;
+        }
+
+        .category-tab {
+            flex-shrink: 0;
+            padding: 8px 18px;
+            border-radius: 24px;
+            border: none;
+            background: var(--surface);
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: var(--transition);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            white-space: nowrap;
+        }
+
+        .category-tab.active {
+            background: var(--primary);
+            color: #fff;
+            box-shadow: 0 4px 14px rgba(229, 57, 53, 0.3);
+        }
+
+        .category-tab:active {
+            transform: scale(0.95);
+        }
+
+        /* ===== PIZZA GRID ===== */
+        .pizza-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 4px;
+        }
+
+        .pizza-card {
+            background: var(--surface);
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+            transition: var(--transition);
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            -webkit-touch-callout: none;
+        }
+
+        .pizza-card:active {
+            transform: scale(0.97);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .pizza-card .img-wrap {
+            aspect-ratio: 1 / 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4rem;
+            background: var(--primary-light);
+            padding: 12px;
+            position: relative;
+        }
+
+        .pizza-card .img-wrap .veg-badge {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            background: #4caf50;
+            color: #fff;
+            font-size: 0.55rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 12px;
+            letter-spacing: 0.3px;
+        }
+
+        .pizza-card .info {
+            padding: 10px 12px 14px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .pizza-card .name {
+            font-weight: 700;
+            font-size: 0.95rem;
+            line-height: 1.3;
+            margin-bottom: 2px;
+        }
+
+        .pizza-card .desc {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            line-height: 1.3;
+            margin-bottom: 8px;
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .pizza-card .bottom {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: auto;
+        }
+
+        .pizza-card .price {
+            font-weight: 700;
+            font-size: 1rem;
+            color: var(--primary);
+        }
+
+        .pizza-card .price small {
+            font-weight: 400;
+            font-size: 0.65rem;
+            color: var(--text-secondary);
+        }
+
+        .add-btn {
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            font-size: 1.2rem;
+            font-weight: 300;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(229, 57, 53, 0.3);
+        }
+
+        .add-btn:active {
+            transform: scale(0.88);
+        }
+
+        /* ===== BOTTOM CART BAR ===== */
+        .cart-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 40;
+            padding: 10px 16px calc(10px + var(--safe-bottom));
+            background: var(--surface);
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.10);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transform: translateY(100%);
+            transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            border-top: 1px solid rgba(0, 0, 0, 0.04);
+        }
+
+        .cart-bar.open {
+            transform: translateY(0);
+        }
+
+        .cart-bar .cart-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .cart-bar .cart-info .items-count {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .cart-bar .cart-info .total {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--text);
+        }
+
+        .cart-bar .checkout-btn {
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            padding: 10px 28px;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: var(--transition);
+            box-shadow: 0 4px 16px rgba(229, 57, 53, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .cart-bar .checkout-btn:active {
+            transform: scale(0.95);
+        }
+
+        .cart-bar .checkout-btn:disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        /* ===== MODAL / SHEET ===== */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+        }
+
+        .modal-overlay.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-sheet {
+            background: var(--surface);
+            border-radius: var(--radius) var(--radius) 0 0;
+            max-width: 480px;
+            width: 100%;
+            max-height: 92vh;
+            padding: 20px 20px calc(20px + var(--safe-bottom));
+            transform: translateY(100%);
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .modal-overlay.open .modal-sheet {
+            transform: translateY(0);
+        }
+
+        .modal-handle {
+            width: 40px;
+            height: 4px;
+            background: #ddd;
+            border-radius: 4px;
+            margin: 0 auto 16px;
+            flex-shrink: 0;
+        }
+
+        .modal-sheet .modal-img {
+            text-align: center;
+            font-size: 4.5rem;
+            margin: 4px 0 8px;
+        }
+
+        .modal-sheet .modal-name {
+            font-size: 1.4rem;
+            font-weight: 700;
+            text-align: center;
+        }
+
+        .modal-sheet .modal-desc {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin: 4px 0 16px;
+        }
+
+        .modal-section {
+            margin: 16px 0;
+        }
+
+        .modal-section .label {
+            font-weight: 600;
+            font-size: 0.85rem;
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-secondary);
+        }
+
+        .size-options {
+            display: flex;
+            gap: 8px;
+        }
+
+        .size-options .size-btn {
+            flex: 1;
+            padding: 10px 0;
+            border: 2px solid #e8e0d8;
+            border-radius: var(--radius-sm);
+            background: transparent;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: var(--transition);
+            text-align: center;
+        }
+
+        .size-options .size-btn .size-label {
+            display: block;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .size-options .size-btn .size-price {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+        }
+
+        .size-options .size-btn.active {
+            border-color: var(--primary);
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .size-options .size-btn.active .size-label {
+            color: var(--primary);
+        }
+
+        .toppings-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+        }
+
+        .toppings-grid .topping-btn {
+            padding: 8px 4px;
+            border: 2px solid #e8e0d8;
+            border-radius: var(--radius-sm);
+            background: transparent;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: var(--transition);
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+        }
+
+        .toppings-grid .topping-btn .topping-emoji {
+            font-size: 1.2rem;
+        }
+
+        .toppings-grid .topping-btn.active {
+            border-color: var(--primary);
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .toppings-grid .topping-btn:active {
+            transform: scale(0.95);
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px solid #f0ebe6;
+        }
+
+        .modal-actions .btn-secondary {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: var(--radius-sm);
+            background: #f0ebe6;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .modal-actions .btn-secondary:active {
+            transform: scale(0.96);
+        }
+
+        .modal-actions .btn-primary {
+            flex: 2;
+            padding: 12px;
+            border: none;
+            border-radius: var(--radius-sm);
+            background: var(--primary);
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: #fff;
+            cursor: pointer;
+            transition: var(--transition);
+            box-shadow: 0 4px 14px rgba(229, 57, 53, 0.25);
+        }
+
+        .modal-actions .btn-primary:active {
+            transform: scale(0.96);
+        }
+
+        /* ===== CART MODAL ===== */
+        .cart-modal .modal-sheet {
+            max-height: 85vh;
+        }
+
+        .cart-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid #f0ebe6;
+        }
+
+        .cart-item .item-emoji {
+            font-size: 2rem;
+            flex-shrink: 0;
+        }
+
+        .cart-item .item-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .cart-item .item-info .item-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .cart-item .item-info .item-detail {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .cart-item .item-price {
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: var(--primary);
+            margin-right: 8px;
+        }
+
+        .cart-item .qty-control {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .cart-item .qty-control button {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: none;
+            background: #f0ebe6;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: var(--transition);
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .cart-item .qty-control button:active {
+            transform: scale(0.88);
+        }
+
+        .cart-item .qty-control .qty {
+            font-weight: 600;
+            font-size: 0.9rem;
+            min-width: 20px;
+            text-align: center;
+        }
+
+        .cart-empty {
+            text-align: center;
+            padding: 40px 0;
+            color: var(--text-secondary);
+        }
+
+        .cart-empty .empty-icon {
+            font-size: 3.5rem;
+            display: block;
+            margin-bottom: 12px;
+        }
+
+        .cart-total-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 16px 0 8px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            border-top: 2px solid #f0ebe6;
+            margin-top: 8px;
+        }
+
+        .cart-total-row .total-price {
+            color: var(--primary);
+        }
+
+        .clear-cart-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            text-decoration: underline;
+            cursor: pointer;
+            padding: 4px 0;
+            margin-top: 4px;
+        }
+
+        /* ===== TOAST ===== */
+        .toast {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: #1a1a1a;
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.35s ease;
+            z-index: 200;
+            white-space: nowrap;
+            max-width: 90%;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* ===== ORDER CONFIRMATION OVERLAY ===== */
+        .confirm-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 150;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+            padding: 24px;
+        }
+
+        .confirm-overlay.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .confirm-box {
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 32px 24px 28px;
+            max-width: 380px;
+            width: 100%;
+            text-align: center;
+            transform: scale(0.92);
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .confirm-overlay.open .confirm-box {
+            transform: scale(1);
+        }
+
+        .confirm-box .big-icon {
+            font-size: 4rem;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .confirm-box h3 {
+            font-size: 1.3rem;
+            margin-bottom: 4px;
+        }
+
+        .confirm-box p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 16px;
+        }
+
+        .confirm-box .order-total {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 20px;
+        }
+
+        .confirm-box .btn-done {
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            padding: 12px 40px;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: var(--transition);
+            box-shadow: 0 4px 16px rgba(229, 57, 53, 0.3);
+        }
+
+        .confirm-box .btn-done:active {
+            transform: scale(0.95);
+        }
+
+        /* ===== SCROLLBAR ===== */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 4px;
+        }
+
+        /* ===== RESPONSIVE TWEAKS ===== */
+        @media (max-width: 420px) {
+            .pizza-grid {
+                gap: 10px;
+            }
+            .pizza-card .name {
+                font-size: 0.85rem;
+            }
+            .pizza-card .price {
+                font-size: 0.9rem;
+            }
+            .add-btn {
+                width: 30px;
+                height: 30px;
+                font-size: 1rem;
+            }
+            .toppings-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (min-width: 600px) {
+            .container {
+                max-width: 560px;
+            }
+            .pizza-grid {
+                grid-template-columns: 1fr 1fr 1fr;
+            }
+        }
+
+        /* small height devices */
+        @media (max-height: 700px) {
+            .modal-sheet .modal-img {
+                font-size: 3.5rem;
+                margin: 0 0 4px;
+            }
+            .modal-sheet .modal-name {
+                font-size: 1.2rem;
+            }
+            .modal-section {
+                margin: 10px 0;
+            }
+            .modal-actions {
+                margin-top: 12px;
+                padding-top: 12px;
+            }
+        }
+
+        /* ===== UTILITY ===== */
+        .hidden {
+            display: none !important;
+        }
+
+        /* smooth loading */
+        .pizza-card {
+            animation: fadeUp 0.4s ease both;
+        }
+        .pizza-card:nth-child(2) {
+            animation-delay: 0.04s;
+        }
+        .pizza-card:nth-child(3) {
+            animation-delay: 0.08s;
+        }
+        .pizza-card:nth-child(4) {
+            animation-delay: 0.12s;
+        }
+        .pizza-card:nth-child(5) {
+            animation-delay: 0.16s;
+        }
+        .pizza-card:nth-child(6) {
+            animation-delay: 0.20s;
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(16px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ripple effect */
+        .ripple {
+            position: relative;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ===== HEADER ===== -->
+    <header class="header">
+        <div class="header-brand">
+            <span class="logo-icon">🍕</span>
+            Pizza House
+        </div>
+        <div class="header-actions">
+            <button class="cart-btn" id="cartBtn" aria-label="Корзина">
+                🛒
+                <span class="cart-badge" id="cartBadge">0</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- ===== MAIN ===== -->
+    <main class="container" id="app">
+        <!-- Categories -->
+        <div class="category-tabs" id="categoryTabs">
+            <button class="category-tab active" data-cat="all">🍕 Все</button>
+            <button class="category-tab" data-cat="classic">🧀 Классические</button>
+            <button class="category-tab" data-cat="meat">🥩 Мясные</button>
+            <button class="category-tab" data-cat="veggie">🌿 Вегетарианские</button>
+        </div>
+
+        <!-- Pizza Grid -->
+        <div class="pizza-grid" id="pizzaGrid"></div>
+    </main>
+
+    <!-- ===== BOTTOM CART BAR ===== -->
+    <div class="cart-bar" id="cartBar">
+        <div class="cart-info">
+            <span class="items-count" id="cartItemsCount">0 товаров</span>
+            <span class="total" id="cartTotal">0 ₽</span>
+        </div>
+        <button class="checkout-btn" id="checkoutBtn">
+            Оформить заказ →
+        </button>
+    </div>
+
+    <!-- ===== PIZZA DETAIL MODAL ===== -->
+    <div class="modal-overlay" id="detailModal">
+        <div class="modal-sheet">
+            <div class="modal-handle"></div>
+            <div class="modal-img" id="modalEmoji">🍕</div>
+            <div class="modal-name" id="modalName">Маргарита</div>
+            <div class="modal-desc" id="modalDesc">Томатный соус, моцарелла, базилик</div>
+
+            <!-- Size -->
+            <div class="modal-section">
+                <span class="label">📏 Размер</span>
+                <div class="size-options" id="sizeOptions">
+                    <button class="size-btn" data-size="small">
+                        <span class="size-label">Маленькая</span>
+                        <span class="size-price">+0 ₽</span>
+                    </button>
+                    <button class="size-btn active" data-size="medium">
+                        <span class="size-label">Средняя</span>
+                        <span class="size-price">+50 ₽</span>
+                    </button>
+                    <button class="size-btn" data-size="large">
+                        <span class="size-label">Большая</span>
+                        <span class="size-price">+100 ₽</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Toppings -->
+            <div class="modal-section">
+                <span class="label">🧂 Дополнительные начинки</span>
+                <div class="toppings-grid" id="toppingsGrid">
+                    <button class="topping-btn" data-topping="extra-cheese">
+                        <span class="topping-emoji">🧀</span> Сыр
+                    </button>
+                    <button class="topping-btn" data-topping="mushrooms">
+                        <span class="topping-emoji">🍄</span> Грибы
+                    </button>
+                    <button class="topping-btn" data-topping="peppers">
+                        <span class="topping-emoji">🫑</span> Перец
+                    </button>
+                    <button class="topping-btn" data-topping="onions">
+                        <span class="topping-emoji">🧅</span> Лук
+                    </button>
+                    <button class="topping-btn" data-topping="olives">
+                        <span class="topping-emoji">🫒</span> Оливки
+                    </button>
+                    <button class="topping-btn" data-topping="bacon">
+                        <span class="topping-emoji">🥓</span> Бекон
+                    </button>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="modal-actions">
+                <button class="btn-secondary" id="modalCancel">Отмена</button>
+                <button class="btn-primary" id="modalAdd">➕ Добавить в корзину</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== CART MODAL ===== -->
+    <div class="modal-overlay cart-modal" id="cartModal">
+        <div class="modal-sheet">
+            <div class="modal-handle"></div>
+            <h3 style="font-size:1.2rem; margin-bottom:4px;">🛒 Корзина</h3>
+            <div id="cartItems"></div>
+            <div class="cart-total-row">
+                <span>Итого</span>
+                <span class="total-price" id="cartModalTotal">0 ₽</span>
+            </div>
+            <button class="clear-cart-btn" id="clearCartBtn">Очистить корзину</button>
+            <div class="modal-actions" style="margin-top:12px; border-top:none; padding-top:0;">
+                <button class="btn-secondary" id="cartModalClose">Закрыть</button>
+                <button class="btn-primary" id="cartModalCheckout">✅ Оформить заказ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== ORDER CONFIRMATION ===== -->
+    <div class="confirm-overlay" id="confirmOverlay">
+        <div class="confirm-box">
+            <span class="big-icon">🎉</span>
+            <h3>Заказ оформлен!</h3>
+            <p>Ваша пицца готовится. Спасибо, что выбрали Pizza House!</p>
+            <div class="order-total" id="confirmTotal">0 ₽</div>
+            <button class="btn-done" id="confirmDone">Отлично!</button>
+        </div>
+    </div>
+
+    <!-- ===== TOAST ===== -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // ============================================================
+        // DATA
+        // ============================================================
+        const PIZZAS = [{
+            id: 1,
+            name: 'Маргарита',
+            emoji: '🍕',
+            desc: 'Томатный соус, моцарелла, базилик',
+            price: 499,
+            category: 'classic',
+            veg: true
+        }, {
+            id: 2,
+            name: 'Пепперони',
+            emoji: '🍕',
+            desc: 'Томатный соус, моцарелла, пепперони',
+            price: 599,
+            category: 'meat',
+            veg: false
+        }, {
+            id: 3,
+            name: 'Гавайская',
+            emoji: '🍍',
+            desc: 'Томатный соус, моцарелла, ветчина, ананас',
+            price: 649,
+            category: 'meat',
+            veg: false
+        }, {
+            id: 4,
+            name: 'Вегетарианская',
+            emoji: '🌿',
+            desc: 'Томатный соус, моцарелла, грибы, перец, лук',
+            price: 549,
+            category: 'veggie',
+            veg: true
+        }, {
+            id: 5,
+            name: 'Мясная',
+            emoji: '🥩',
+            desc: 'Томатный соус, моцарелла, пепперони, колбаса, бекон',
+            price: 699,
+            category: 'meat',
+            veg: false
+        }, {
+            id: 6,
+            name: 'Барбекю с курицей',
+            emoji: '🍗',
+            desc: 'Соус BBQ, моцарелла, курица, красный лук',
+            price: 679,
+            category: 'meat',
+            veg: false
+        }, {
+            id: 7,
+            name: 'Четыре сыра',
+            emoji: '🧀',
+            desc: 'Моцарелла, пармезан, горгонзола, фета',
+            price: 629,
+            category: 'classic',
+            veg: true
+        }, {
+            id: 8,
+            name: 'Грибная',
+            emoji: '🍄',
+            desc: 'Томатный соус, моцарелла, шампиньоны, трюфельное масло',
+            price: 579,
+            category: 'veggie',
+            veg: true
+        }];
+
+        const SIZE_PRICES = {
+            small: 0,
+            medium: 50,
+            large: 100
+        };
+
+        const SIZE_LABELS = {
+            small: 'Маленькая',
+            medium: 'Средняя',
+            large: 'Большая'
+        };
+
+        const TOPPING_PRICES = {
+            'extra-cheese': 40,
+            'mushrooms': 50,
+            'peppers': 35,
+            'onions': 30,
+            'olives': 45,
+            'bacon': 60
+        };
+
+        const TOPPING_EMOJIS = {
+            'extra-cheese': '🧀',
+            'mushrooms': '🍄',
+            'peppers': '🫑',
+            'onions': '🧅',
+            'olives': '🫒',
+            'bacon': '🥓'
+        };
+
+        const TOPPING_NAMES = {
+            'extra-cheese': 'Сыр',
+            'mushrooms': 'Грибы',
+            'peppers': 'Перец',
+            'onions': 'Лук',
+            'olives': 'Оливки',
+            'bacon': 'Бекон'
+        };
+
+        // ============================================================
+        // STATE
+        // ============================================================
+        let cart = [];
+        let currentCategory = 'all';
+        let selectedPizza = null;
+        let selectedSize = 'medium';
+        let selectedToppings = new Set();
+
+        // ============================================================
+        // DOM REFS
+        // ============================================================
+        const $ = (sel) => document.querySelector(sel);
+        const $$ = (sel) => document.querySelectorAll(sel);
+
+        const grid = $('#pizzaGrid');
+        const cartBar = $('#cartBar');
+        const cartItemsCount = $('#cartItemsCount');
+        const cartTotal = $('#cartTotal');
+        const cartBadge = $('#cartBadge');
+        const checkoutBtn = $('#checkoutBtn');
+
+        const detailModal = $('#detailModal');
+        const modalEmoji = $('#modalEmoji');
+        const modalName = $('#modalName');
+        const modalDesc = $('#modalDesc');
+        const sizeOptions = $('#sizeOptions');
+        const toppingsGrid = $('#toppingsGrid');
+        const modalCancel = $('#modalCancel');
+        const modalAdd = $('#modalAdd');
+
+        const cartModal = $('#cartModal');
+        const cartItemsContainer = $('#cartItems');
+        const cartModalTotal = $('#cartModalTotal');
+        const cartModalClose = $('#cartModalClose');
+        const cartModalCheckout = $('#cartModalCheckout');
+        const clearCartBtn = $('#clearCartBtn');
+
+        const confirmOverlay = $('#confirmOverlay');
+        const confirmTotal = $('#confirmTotal');
+        const confirmDone = $('#confirmDone');
+
+        const toast = $('#toast');
+        let toastTimer = null;
+
+        // ============================================================
+        // RENDER PIZZAS
+        // ============================================================
+        function renderPizzas() {
+            const filtered = currentCategory === 'all' ?
+                PIZZAS :
+                PIZZAS.filter(p => p.category === currentCategory);
+
+            grid.innerHTML = filtered.map(p => `
+                    <div class="pizza-card" data-id="${p.id}">
+                        <div class="img-wrap">
+                            ${p.veg ? '<span class="veg-badge">🌱</span>' : ''}
+                            ${p.emoji}
+                        </div>
+                        <div class="info">
+                            <div class="name">${p.name}</div>
+                            <div class="desc">${p.desc}</div>
+                            <div class="bottom">
+                                <span class="price">${p.price} <small>₽</small></span>
+                                <button class="add-btn" data-id="${p.id}" aria-label="Добавить">+</button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+
+            // Event listeners for add buttons
+            grid.querySelectorAll('.add-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const id = parseInt(btn.dataset.id);
+                    openDetail(id);
+                });
+            });
+
+            // Click on card
+            grid.querySelectorAll('.pizza-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    const id = parseInt(card.dataset.id);
+                    openDetail(id);
+                });
+            });
+        }
+
+        // ============================================================
+        // CATEGORY TABS
+        // ============================================================
+        $$('.category-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                $$('.category-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                currentCategory = tab.dataset.cat;
+                renderPizzas();
+            });
+        });
+
+        // ============================================================
+        // DETAIL MODAL
+        // ============================================================
+        function openDetail(id) {
+            const pizza = PIZZAS.find(p => p.id === id);
+            if (!pizza) return;
+            selectedPizza = pizza;
+            selectedSize = 'medium';
+            selectedToppings = new Set();
+
+            modalEmoji.textContent = pizza.emoji;
+            modalName.textContent = pizza.name;
+            modalDesc.textContent = pizza.desc;
+
+            // Reset sizes
+            sizeOptions.querySelectorAll('.size-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.size === 'medium');
+            });
+
+            // Reset toppings
+            toppingsGrid.querySelectorAll('.topping-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            detailModal.classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeDetail() {
+            detailModal.classList.remove('open');
+            document.body.style.overflow = '';
+        }
+
+        // Size selection
+        sizeOptions.addEventListener('click', (e) => {
+            const btn = e.target.closest('.size-btn');
+            if (!btn) return;
+            sizeOptions.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            selectedSize = btn.dataset.size;
+        });
+
+        // Topping selection
+        toppingsGrid.addEventListener('click', (e) => {
+            const btn = e.target.closest('.topping-btn');
+            if (!btn) return;
+            const key = btn.dataset.topping;
+            if (selectedToppings.has(key)) {
+                selectedToppings.delete(key);
+                btn.classList.remove('active');
+            } else {
+                selectedToppings.add(key);
+                btn.classList.add('active');
+            }
+        });
+
+        // Cancel
+        modalCancel.addEventListener('click', closeDetail);
+
+        // Close on overlay click
+        detailModal.addEventListener('click', (e) => {
+            if (e.target === detailModal) closeDetail();
+        });
+
+        // Add to cart
+        modalAdd.addEventListener('click', () => {
+            if (!selectedPizza) return;
+            const basePrice = selectedPizza.price;
+            const sizeExtra = SIZE_PRICES[selectedSize] || 0;
+            let toppingsExtra = 0;
+            const toppingsList = [];
+            selectedToppings.forEach(key => {
+                toppingsExtra += TOPPING_PRICES[key] || 0;
+                toppingsList.push(TOPPING_NAMES[key]);
+            });
+
+            const totalPrice = basePrice + sizeExtra + toppingsExtra;
+
+            const item = {
+                id: selectedPizza.id,
+                name: selectedPizza.name,
+                emoji: selectedPizza.emoji,
+                size: selectedSize,
+                sizeLabel: SIZE_LABELS[selectedSize],
+                toppings: toppingsList,
+                price: totalPrice,
+                basePrice: basePrice,
+                sizeExtra: sizeExtra,
+                toppingsExtra: toppingsExtra,
+                quantity: 1
+            };
+
+            // Check if same item exists (same id, size, toppings)
+            const existing = cart.find(c =>
+                c.id === item.id &&
+                c.size === item.size &&
+                JSON.stringify(c.toppings) === JSON.stringify(item.toppings)
+            );
+
+            if (existing) {
+                existing.quantity += 1;
+            } else {
+                cart.push(item);
+            }
+
+            closeDetail();
+            updateCartUI();
+            showToast(`🍕 ${item.name} добавлена!`);
+        });
+
+        // ============================================================
+        // CART UI
+        // ============================================================
+        function updateCartUI() {
+            const totalItems = cart.reduce((sum, i) => sum + i.quantity, 0);
+            const totalPrice = cart.reduce((sum, i) => sum + i.price * i.quantity, 0);
+
+            cartItemsCount.textContent = totalItems === 0 ? '0 товаров' :
+                `${totalItems} ${decline(totalItems, 'товар', 'товара', 'товаров')}`;
+            cartTotal.textContent = `${totalPrice} ₽`;
+            cartBadge.textContent = totalItems;
+            cartBadge.classList.toggle('show', totalItems > 0);
+
+            // Toggle cart bar
+            cartBar.classList.toggle('open', totalItems > 0);
+            checkoutBtn.disabled = totalItems === 0;
+
+            // Update cart modal if open
+            if (cartModal.classList.contains('open')) {
+                renderCartModal();
+            }
+        }
+
+        function decline(n, one, two, five) {
+            n = Math.abs(n);
+            n %= 100;
+            if (n >= 5 && n <= 20) return five;
+            n %= 10;
+            if (n === 1) return one;
+            if (n >= 2 && n <= 4) return two;
+            return five;
+        }
+
+        // ============================================================
+        // CART MODAL
+        // ============================================================
+        function openCartModal() {
+            renderCartModal();
+            cartModal.classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeCartModal() {
+            cartModal.classList.remove('open');
+            document.body.style.overflow = '';
+        }
+
+        function renderCartModal() {
+            if (cart.length === 0) {
+                cartItemsContainer.innerHTML = `
+                        <div class="cart-empty">
+                            <span class="empty-icon">🛒</span>
+                            Корзина пуста<br>
+                            <span style="font-size:0.8rem;">Добавьте пиццу, чтобы сделать заказ</span>
+                        </div>
+                    `;
+                cartModalTotal.textContent = '0 ₽';
+                return;
+            }
+
+            let html = '';
+            let total = 0;
+            cart.forEach((item, index) => {
+                const itemTotal = item.price * item.quantity;
+                total += itemTotal;
+                const toppingsStr = item.toppings.length > 0 ?
+                    ` + ${item.toppings.join(', ')}` :
+                    '';
+                html += `
+                        <div class="cart-item">
+                            <span class="item-emoji">${item.emoji}</span>
+                            <div class="item-info">
+                                <div class="item-name">${item.name}</div>
+                                <div class="item-detail">${item.sizeLabel}${toppingsStr}</div>
+                            </div>
+                            <span class="item-price">${itemTotal} ₽</span>
+                            <div class="qty-control">
+                                <button data-index="${index}" data-action="dec">−</button>
+                                <span class="qty">${item.quantity}</span>
+                                <button data-index="${index}" data-action="inc">+</button>
+                            </div>
+                        </div>
+                    `;
+            });
+
+            cartItemsContainer.innerHTML = html;
+            cartModalTotal.textContent = `${total} ₽`;
+
+            // Quantity controls
+            cartItemsContainer.querySelectorAll('.qty-control button').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const index = parseInt(btn.dataset.index);
+                    const action = btn.dataset.action;
+                    if (action === 'inc') {
+                        cart[index].quantity += 1;
+                    } else {
+                        cart[index].quantity -= 1;
+                        if (cart[index].quantity <= 0) {
+                            cart.splice(index, 1);
+                        }
+                    }
+                    updateCartUI();
+                    renderCartModal();
+                });
+            });
+        }
+
+        // Clear cart
+        clearCartBtn.addEventListener('click', () => {
+            if (cart.length === 0) return;
+            if (confirm('Очистить корзину?')) {
+                cart = [];
+                updateCartUI();
+                renderCartModal();
+                showToast('Корзина очищена');
+            }
+        });
+
+        // ============================================================
+        // CHECKOUT
+        // ============================================================
+        function checkout() {
+            if (cart.length === 0) return;
+            const total = cart.reduce((sum, i) => sum + i.price * i.quantity, 0);
+            confirmTotal.textContent = `${total} ₽`;
+            confirmOverlay.classList.add('open');
+
+            // Close other modals
+            closeCartModal();
+            closeDetail();
+
+            // Clear cart
+            cart = [];
+            updateCartUI();
+        }
+
+        confirmDone.addEventListener('click', () => {
+            confirmOverlay.classList.remove('open');
+            showToast('🍕 Приятного аппетита!');
+        });
+
+        confirmOverlay.addEventListener('click', (e) => {
+            if (e.target === confirmOverlay) {
+                confirmOverlay.classList.remove('open');
+            }
+        });
+
+        // ============================================================
+        // EVENT BINDINGS
+        // ============================================================
+
+        // Cart button in header
+        $('#cartBtn').addEventListener('click', openCartModal);
+
+        // Cart modal close
+        cartModalClose.addEventListener('click', closeCartModal);
+        cartModal.addEventListener('click', (e) => {
+            if (e.target === cartModal) closeCartModal();
+        });
+
+        // Checkout buttons
+        checkoutBtn.addEventListener('click', checkout);
+        cartModalCheckout.addEventListener('click', checkout);
+
+        // ============================================================
+        // TOAST
+        // ============================================================
+        function showToast(text) {
+            toast.textContent = text;
+            toast.classList.add('show');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2200);
+        }
+
+        // ============================================================
+        // KEYBOARD
+        // ============================================================
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                if (confirmOverlay.classList.contains('open')) {
+                    confirmOverlay.classList.remove('open');
+                } else if (cartModal.classList.contains('open')) {
+                    closeCartModal();
+                } else if (detailModal.classList.contains('open')) {
+                    closeDetail();
+                }
+            }
+        });
+
+        // ============================================================
+        // INIT
+        // ============================================================
+        renderPizzas();
+        updateCartUI();
+
+        // Preload
+        console.log('🍕 Pizza House ready!');
+    </script>
+        <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then(reg => console.log('PWA готов к работе!'))
+            .catch(err => console.error('Ошибка:', err));
+        });
+      }
+    </script>
+
+</body>
+</html>
